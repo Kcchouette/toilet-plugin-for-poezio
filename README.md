@@ -1,4 +1,4 @@
-toilet-plugin-for-poezio
+Toilet plugin for poezio
 ========================
 
-Implement the toilet command under Poezio
+"toilet plugin for poezio" is a project to implement the toilet command (http://caca.zoy.org/wiki/toilet) under the XMPP client Poezio (http://poez.io/)
