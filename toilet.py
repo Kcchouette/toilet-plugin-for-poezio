@@ -15,11 +15,11 @@ Usage
 
 Say something in a Chat tab, with an arg1 and arg2 `<font> <filter> <message>`
 
-.. note:: Can create fun things when used with :ref:`The rainbow plugin <rainbow-plugin>`.
-
 """
 from plugin import BasePlugin
 import subprocess
+
+import xhtml
 
 class Plugin(BasePlugin):
     def init(self):
@@ -27,9 +27,24 @@ class Plugin(BasePlugin):
         self.api.add_event_handler('conversation_say', self.setoilette)
         self.api.add_event_handler('private_say', self.setoilette)
 
+    def nocommand(self, text):
+        """ find if another command is insert (like -h)
+        lstrip for remove left spaces
+        """
+        if text.lstrip().startswith('-'):
+            return False
+        return True
+
     def setoilette(self, msg, tab):
-        msgsplit = msg['body'].split()
-        if len(msgsplit) > 2:
-            process = subprocess.Popen(['toilet', '-f', msgsplit[0], '--filter', msgsplit[1], ' '.join(msgsplit[2:])], stdout=subprocess.PIPE)
-            result = process.communicate()[0].decode('utf-8')
-            msg['body'] = result
+        """ split body, get html toilet result, remove title, convert to poezio style """
+        msgsplit = xhtml.clean_text(msg['body']).split()
+        # check if ok
+        if len(msgsplit) > 2 and self.nocommand(msgsplit[0]) and self.nocommand(msgsplit[1]) and self.nocommand(' '.join(msgsplit[2:])):
+            # -f == --font && -E == --export <format>
+            process = subprocess.Popen(['toilet', '-E', 'html', '-f', msgsplit[0], '--filter', msgsplit[1], ' '.join(msgsplit[2:])], stdout=subprocess.PIPE)
+            xhtml_result = process.communicate()[0].decode('utf-8')
+            if xhtml_result:
+                # remove title
+                xhtml_result = xhtml_result[:xhtml_result.find('<title>')] + xhtml_result[xhtml_result.find('</title>')+8:]
+                result = "\n" + xhtml.xhtml_to_poezio_colors(xhtml_result)
+                msg['body'] = result
