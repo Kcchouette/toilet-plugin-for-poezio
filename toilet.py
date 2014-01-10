@@ -40,11 +40,20 @@ class Plugin(BasePlugin):
         msgsplit = xhtml.clean_text(msg['body']).split()
         # check if ok
         if len(msgsplit) > 2 and self.nocommand(msgsplit[0]) and self.nocommand(msgsplit[1]) and self.nocommand(' '.join(msgsplit[2:])):
+            xhtml_result = None
+            try:
             # -f == --font && -E == --export <format>
-            process = subprocess.Popen(['toilet', '-E', 'html', '-f', msgsplit[0], '--filter', msgsplit[1], ' '.join(msgsplit[2:])], stdout=subprocess.PIPE)
-            xhtml_result = process.communicate()[0].decode('utf-8')
+                process = subprocess.Popen(['toilet', '-E', 'html', '-f', msgsplit[0], '--filter', msgsplit[1], ' '.join(msgsplit[2:])], stdout=subprocess.PIPE)
+                xhtml_result = process.communicate()[0].decode('utf-8')
+            except:
+                xhtml_result = None
             if xhtml_result:
                 # remove title
-                xhtml_result = xhtml_result[:xhtml_result.find('<title>')] + xhtml_result[xhtml_result.find('</title>')+8:]
+                titlefind = xhtml_result.find('<title>')
+                if titlefind:
+                    xhtml_result = xhtml_result[:titlefind] + xhtml_result[xhtml_result.find('</title>')+8:]
+                # convert to poezio color ## not work like wanted, color not show
                 result = "\n" + xhtml.xhtml_to_poezio_colors(xhtml_result)
                 msg['body'] = result
+            else:
+                msg['body'] = ' '.join(msgsplit[2:])
